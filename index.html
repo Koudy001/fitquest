@@ -15,7 +15,18 @@ header{padding:24px 18px 12px}header h1{margin:0;font-size:30px}header p{color:#
 .hero{text-align:center;background:linear-gradient(145deg,#17152b,#101827)}
 .avatar{width:90px;height:90px;margin:auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;background:#27203d;border:4px solid #8b5cf6}
 .level{font-size:28px;font-weight:bold;margin-top:10px}.xpbar{height:12px;background:#252938;border-radius:20px;overflow:hidden;margin-top:12px}
-.xpfill{height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#22d3ee);transition:.4s}
+.xpfill{height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#22d3ee);transition:width 1s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px #8b5cf6}
+#rewardToast{position:fixed;top:18%;left:50%;transform:translate(-50%,18px) scale(.8);opacity:0;pointer-events:none;z-index:50;background:linear-gradient(135deg,#312e81,#164e63);border:1px solid #67e8f9;color:#fff;padding:15px 24px;border-radius:18px;text-align:center;font-size:23px;font-weight:900;box-shadow:0 12px 40px #0009;transition:opacity .25s,transform .35s}
+#rewardToast small{display:block;font-size:13px;margin-top:5px;color:#a5f3fc}
+#rewardToast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#levelOverlay{display:none;position:fixed;inset:0;z-index:60;background:#070816eF;align-items:center;justify-content:center;text-align:center;padding:24px}
+#levelOverlay.show{display:flex;animation:overlayIn .25s ease-out}
+.levelPop{border:2px solid #a78bfa;background:linear-gradient(145deg,#312e81,#111827);border-radius:26px;padding:32px 28px;box-shadow:0 0 70px #8b5cf688;animation:pop .55s cubic-bezier(.2,1.5,.5,1)}
+.levelPop .big{font-size:56px}.levelPop h2{font-size:30px;margin:8px 0}.levelPop p{color:#c4b5fd}
+.levelPop button{background:#8b5cf6;color:white;margin-top:8px}
+@keyframes pop{from{transform:scale(.55) rotate(-5deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px}.stat{background:#151925;border:1px solid #272c3b;border-radius:16px;padding:15px 8px;text-align:center}.stat b{display:block;font-size:21px;margin-top:5px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{border:0;border-radius:14px;padding:14px;font-size:15px;font-weight:bold;cursor:pointer}.action{background:#202638;color:#fff}.primary{width:100%;background:#7c3aed;color:#fff}
 .screen{display:none}.screen.active{display:block}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;background:#111520;border-radius:15px;margin-top:8px}.item small{color:#9ca3af}
@@ -25,6 +36,8 @@ input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #343a4c
 </style>
 </head>
 <body>
+<div id="rewardToast" role="status" aria-live="polite">✨ +50 XP<small>+25 Quest Coins</small></div>
+<div id="levelOverlay" role="dialog" aria-modal="true" aria-labelledby="levelUpTitle"><div class="levelPop"><div class="big">🆙✨</div><h2 id="levelUpTitle">LEVEL UP!</h2><p id="levelUpText">Dosáhl jsi nového levelu!</p><button onclick="closeLevelOverlay()">POKRAČOVAT</button></div></div>
 <div class="app">
 <header><h1>⚡ FitQuest ULTIMATE</h1><p>Tvoje fitness RPG</p></header>
 
@@ -83,7 +96,21 @@ function startWorkout(){
  const step=()=>{if(i>=ex.length){finishWorkout();return}document.getElementById("exerciseName").textContent=ex[i];let s=10;document.getElementById("timer").textContent=s;let t=setInterval(()=>{s--;document.getElementById("timer").textContent=s;if(s<=0){clearInterval(t);i++;step()}},1000)};
  document.getElementById("nextBtn").onclick=()=>{i++;step()};step()
 }
-function finishWorkout(){let today=new Date().toISOString().slice(0,10);data.xp+=50;data.coins+=25;data.workouts++;data.streak++;data.bestStreak=Math.max(data.bestStreak,data.streak);data.lastWorkout=today;data.history.push({date:today,xp:50});checkAchievements();save();update();alert("🔥 Quest dokončen!\n\n+50 XP\n+25 Quest Coins");showScreen("home")}
+function showRewardToast(){const el=document.getElementById("rewardToast");el.innerHTML="✨ +50 XP<small>+25 Quest Coins</small>";el.classList.remove("show");void el.offsetWidth;el.classList.add("show");clearTimeout(window.rewardToastTimer);window.rewardToastTimer=setTimeout(()=>el.classList.remove("show"),2400)}
+function closeLevelOverlay(){document.getElementById("levelOverlay").classList.remove("show")}
+function showLevelUp(level){document.getElementById("levelUpText").textContent="Dosáhl jsi Levelu "+level+"! Tvoje cesta hrdiny pokračuje.";document.getElementById("levelOverlay").classList.add("show")}
+function finishWorkout(){
+ const today=new Date().toISOString().slice(0,10);
+ const oldLevel=calculateLevel();
+ const oldAchievements=[...data.achievements];
+ data.xp+=50;data.coins+=25;data.workouts++;data.streak++;data.bestStreak=Math.max(data.bestStreak,data.streak);data.lastWorkout=today;data.history.push({date:today,xp:50});
+ checkAchievements();
+ const newLevel=calculateLevel();
+ const unlocked=data.achievements.filter(a=>!oldAchievements.includes(a));
+ save();update();showScreen("home");showRewardToast();
+ if(newLevel>oldLevel){setTimeout(()=>showLevelUp(newLevel),650)}
+ else if(unlocked.length){setTimeout(()=>{const el=document.getElementById("rewardToast");el.innerHTML="🏆 Achievement odemčen!<small>"+unlocked[0]+"</small>";el.classList.add("show");clearTimeout(window.rewardToastTimer);window.rewardToastTimer=setTimeout(()=>el.classList.remove("show"),3000)},700)}
+}
 function saveGym(){let e=document.getElementById("exercise").value,s=document.getElementById("sets").value,r=document.getElementById("reps").value,w=document.getElementById("weight").value;localStorage.setItem("fitquest_gym_"+e,JSON.stringify({sets:s,reps:r,weight:w}));document.getElementById("lastResult").textContent="Poslední výkon: "+s+" série × "+r+" opakování × "+(w||"—")+" kg";alert("🏋️ Výkon uložen!")}
 function equipAvatar(a){data.avatar=a;save();update()}
 function renderTitles(){let titles=["Začátečník","RPG Warrior","XP Hunter","Quest Master","Streak Warrior","Legend"];document.getElementById("titles").innerHTML=titles.map((t,i)=>{let u=data.ownedTitles.includes(t)||data.level>=i*2+1;return '<div class="item"><span>'+ (u?"🏷️":"🔒")+" "+t+'</span>'+(u?'<button onclick="equipTitle(\''+t+'\')">Použít</button>':"<small>Zamčeno</small>")+"</div>"}).join("")}
