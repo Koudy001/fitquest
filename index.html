@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<meta name="description" content="FitQuest ULTIMATE – fitness RPG">
+<link rel="manifest" href="manifest.json">
+<title>FitQuest ULTIMATE</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#090b12;color:#fff}
+.app{max-width:600px;margin:auto;min-height:100vh;padding-bottom:90px}
+header{padding:24px 18px 12px}header h1{margin:0;font-size:30px}header p{color:#9ca3af}
+.card{background:#151925;border:1px solid #272c3b;border-radius:20px;padding:18px;margin:12px}
+.hero{text-align:center;background:linear-gradient(145deg,#17152b,#101827)}
+.avatar{width:90px;height:90px;margin:auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:48px;background:#27203d;border:4px solid #8b5cf6}
+.level{font-size:28px;font-weight:bold;margin-top:10px}.xpbar{height:12px;background:#252938;border-radius:20px;overflow:hidden;margin-top:12px}
+.xpfill{height:100%;width:0;background:linear-gradient(90deg,#8b5cf6,#22d3ee);transition:.4s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px}.stat{background:#151925;border:1px solid #272c3b;border-radius:16px;padding:15px 8px;text-align:center}.stat b{display:block;font-size:21px;margin-top:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{border:0;border-radius:14px;padding:14px;font-size:15px;font-weight:bold;cursor:pointer}.action{background:#202638;color:#fff}.primary{width:100%;background:#7c3aed;color:#fff}
+.screen{display:none}.screen.active{display:block}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;background:#111520;border-radius:15px;margin-top:8px}.item small{color:#9ca3af}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(600px,100%);background:#10131d;border-top:1px solid #292e3d;display:grid;grid-template-columns:repeat(5,1fr);padding:8px;z-index:10}
+.nav button{background:transparent;color:#9ca3af;padding:9px 3px;font-size:11px}.nav button.active{color:#a78bfa}.notice{padding:12px;background:#172033;border-radius:14px;margin-top:10px}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #343a4c;background:#0e1119;color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>⚡ FitQuest ULTIMATE</h1><p>Tvoje fitness RPG</p></header>
+
+<section id="home" class="screen active">
+<div class="card hero"><div id="avatar" class="avatar">⚡</div><div id="title">Začátečník</div>
+<div class="level">Level <span id="level">1</span></div><div class="xpbar"><div id="xpFill" class="xpfill"></div></div><p><span id="xp">0</span> XP</p></div>
+<div class="stats"><div class="stat">🔥 Streak<b id="streak">0</b></div><div class="stat">🪙 Coins<b id="coins">0</b></div><div class="stat">🏆 Tréninky<b id="workouts">0</b></div></div>
+<div class="card"><h2>🎯 Dnešní quest</h2><p>Dokonči dnešní bezpečný hlavní trénink.</p><button class="primary" onclick="startWorkout()">START QUESTU</button></div>
+<div class="card"><h2>⚡ Rychlé akce</h2><div class="grid"><button class="action" onclick="showScreen('quest')">⚔️ Questy</button><button class="action" onclick="showScreen('gym')">🏋️ Posilovna</button><button class="action" onclick="showScreen('character')">🧙 Postava</button><button class="action" onclick="showScreen('shop')">🛒 Obchod</button></div></div>
+</section>
+
+<section id="quest" class="screen"><div class="card"><h2>⚔️ Quest</h2><div id="questContent"><p>Vyber si dnešní trénink.</p><button class="primary" onclick="startWorkout()">🔥 Spustit domácí trénink</button></div></div><div class="card"><h2>🗺️ Cesta hrdiny</h2><div id="levelMap"></div></div></section>
+
+<section id="gym" class="screen"><div class="card"><h2>🏋️ Posilovna</h2>
+<label>Cvik</label><select id="exercise"><option>Bench press</option><option>Dřepy</option><option>Přítahy</option><option>Tlaky na ramena</option><option>Stahování kladky</option><option>Bicepsový zdvih</option></select>
+<br><br><label>Série</label><input id="sets" type="number" min="1" value="3"><br><br>
+<label>Opakování</label><input id="reps" type="number" min="1" value="10"><br><br>
+<label>Váha</label><input id="weight" type="number" min="0" step="0.5" placeholder="kg"><br><br>
+<div id="lastResult" class="notice">Zatím žádný uložený výkon.</div><br><button class="primary" onclick="saveGym()">💾 Uložit trénink</button></div></section>
+
+<section id="character" class="screen"><div class="card hero"><div id="characterAvatar" class="avatar">⚡</div><h2 id="characterTitle">Začátečník</h2><p>Level <span id="characterLevel">1</span></p></div>
+<div class="card"><h2>🧙 Avatar</h2><div class="grid"><button onclick="equipAvatar('⚡')">⚡</button><button onclick="equipAvatar('🐉')">🐉</button><button onclick="equipAvatar('🤖')">🤖</button><button onclick="equipAvatar('🌌')">🌌</button></div></div>
+<div class="card"><h2>🏷️ Titul</h2><div id="titles"></div></div><div class="card"><h2>🎒 Inventář</h2><div id="inventory"></div></div></section>
+
+<section id="shop" class="screen"><div class="card"><h2>🛒 Obchod</h2><p>🪙 Quest Coins: <b id="shopCoins">0</b></p></div><div id="shopItems"></div></section>
+
+<section id="profile" class="screen"><div class="card"><h2>👤 Profil</h2><p>Level: <b id="profileLevel">1</b></p><p>XP: <b id="profileXP">0</b></p><p>Tréninky: <b id="profileWorkouts">0</b></p><p>Nejdelší streak: <b id="bestStreak">0</b></p><p>Quest Coins: <b id="profileCoins">0</b></p></div>
+<div class="card"><h2>🏆 Achievementy</h2><div id="achievements"></div></div><div class="card"><h2>📊 Historie</h2><div id="history"></div></div></section>
+</div>
+
+<nav class="nav"><button onclick="showScreen('home')">🏠<br>Domů</button><button onclick="showScreen('quest')">⚔️<br>Quest</button><button onclick="showScreen('gym')">🏋️<br>Gym</button><button onclick="showScreen('shop')">🛒<br>Shop</button><button onclick="showScreen('profile')">👤<br>Profil</button></nav>
+
+<script>
+const levels=[0,100,250,450,700,1000,1400,1900,2500,3200];
+let data=JSON.parse(localStorage.getItem("fitquestUltimate"))||{xp:0,level:1,coins:0,streak:0,bestStreak:0,workouts:0,avatar:"⚡",title:"Začátečník",inventory:[],achievements:[],history:[],lastWorkout:"",ownedTitles:["Začátečník"]};
+function save(){localStorage.setItem("fitquestUltimate",JSON.stringify(data))}
+function calculateLevel(){let n=1;for(let i=0;i<levels.length;i++)if(data.xp>=levels[i])n=i+1;return n}
+function update(){
+ data.level=calculateLevel();
+ for(const id of ["xp","profileXP"])document.getElementById(id).textContent=data.xp;
+ for(const id of ["level","profileLevel","characterLevel"])document.getElementById(id).textContent=data.level;
+ for(const id of ["coins","shopCoins","profileCoins"])document.getElementById(id).textContent=data.coins;
+ document.getElementById("streak").textContent=data.streak;document.getElementById("workouts").textContent=data.workouts;
+ document.getElementById("profileWorkouts").textContent=data.workouts;document.getElementById("bestStreak").textContent=data.bestStreak;
+ document.getElementById("avatar").textContent=data.avatar;document.getElementById("characterAvatar").textContent=data.avatar;
+ document.getElementById("title").textContent=data.title;document.getElementById("characterTitle").textContent=data.title;
+ let cur=levels[Math.min(data.level-1,levels.length-1)],next=levels[Math.min(data.level,levels.length-1)];
+ document.getElementById("xpFill").style.width=(data.level>=levels.length?100:Math.max(0,Math.min(100,(data.xp-cur)/(next-cur)*100)))+"%";
+ renderMap();renderAchievements();renderInventory();renderTitles();renderShop();renderHistory();save()
+}
+function showScreen(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");update()}
+function startWorkout(){
+ const today=new Date().toISOString().slice(0,10);if(data.lastWorkout===today){alert("Dnešní hlavní XP odměnu už máš splněnou! 🔥");return}
+ const ex=["10 dřepů","8 kliků","20 sekund plank","10 výpadů","20 jumping jacků"];let i=0,box=document.getElementById("questContent");
+ box.innerHTML='<h2>🔥 Trénink</h2><h3 id="exerciseName"></h3><div style="font-size:50px;text-align:center" id="timer">10</div><button class="primary" id="nextBtn">DALŠÍ</button>';
+ const step=()=>{if(i>=ex.length){finishWorkout();return}document.getElementById("exerciseName").textContent=ex[i];let s=10;document.getElementById("timer").textContent=s;let t=setInterval(()=>{s--;document.getElementById("timer").textContent=s;if(s<=0){clearInterval(t);i++;step()}},1000)};
+ document.getElementById("nextBtn").onclick=()=>{i++;step()};step()
+}
+function finishWorkout(){let today=new Date().toISOString().slice(0,10);data.xp+=50;data.coins+=25;data.workouts++;data.streak++;data.bestStreak=Math.max(data.bestStreak,data.streak);data.lastWorkout=today;data.history.push({date:today,xp:50});checkAchievements();save();update();alert("🔥 Quest dokončen!\n\n+50 XP\n+25 Quest Coins");showScreen("home")}
+function saveGym(){let e=document.getElementById("exercise").value,s=document.getElementById("sets").value,r=document.getElementById("reps").value,w=document.getElementById("weight").value;localStorage.setItem("fitquest_gym_"+e,JSON.stringify({sets:s,reps:r,weight:w}));document.getElementById("lastResult").textContent="Poslední výkon: "+s+" série × "+r+" opakování × "+(w||"—")+" kg";alert("🏋️ Výkon uložen!")}
+function equipAvatar(a){data.avatar=a;save();update()}
+function renderTitles(){let titles=["Začátečník","RPG Warrior","XP Hunter","Quest Master","Streak Warrior","Legend"];document.getElementById("titles").innerHTML=titles.map((t,i)=>{let u=data.ownedTitles.includes(t)||data.level>=i*2+1;return '<div class="item"><span>'+ (u?"🏷️":"🔒")+" "+t+'</span>'+(u?'<button onclick="equipTitle(\''+t+'\')">Použít</button>':"<small>Zamčeno</small>")+"</div>"}).join("")}
+function equipTitle(t){if(!data.ownedTitles.includes(t))data.ownedTitles.push(t);data.title=t;save();update()}
+function renderInventory(){document.getElementById("inventory").innerHTML=data.inventory.length?data.inventory.map(x=>'<div class="item">🎁 '+x+"</div>").join(""):"<p>🎒 Inventář je zatím prázdný.</p>"}
+function renderShop(){let items=[["🐉 Dračí avatar",100],["🤖 Cyber avatar",150],["🌌 Cosmic avatar",200],["🖼️ Zlatý rámeček",250],["✨ Aura efekt",300],["👑 Legendární titul",500]];document.getElementById("shopItems").innerHTML=items.map((x,i)=>'<div class="card"><div class="item"><div><b>'+x[0]+'</b><br><small>🪙 '+x[1]+' Coins</small></div><button onclick="buyItem('+i+','+x[1]+',\''+x[0]+'\')">Koupit</button></div></div>').join("")}
+function buyItem(i,c,n){if(data.inventory.includes(n)){alert("Tenhle předmět už máš.");return}if(data.coins<c){alert("Nemáš dost Quest Coins.");return}data.coins-=c;data.inventory.push(n);save();update();alert("🎁 Zakoupeno: "+n)}
+function renderMap(){document.getElementById("levelMap").innerHTML=Array.from({length:10},(_,i)=>{let l=i+1,u=data.level>=l;return '<div class="item"><span>'+(u?"🔓":"🔒")+" Level "+l+"</span><b>"+(u?"DOSTUPNÉ":"ZAMČENO")+"</b></div>"}).join("")}
+function checkAchievements(){[["První krok",data.workouts>=1],["250 XP",data.xp>=250],["500 XP",data.xp>=500],["Level 5",data.level>=5],["7 dní streak",data.bestStreak>=7],["Level 10",data.level>=10],["10 tréninků",data.workouts>=10],["XP Hunter",data.xp>=2000]].forEach(a=>{if(a[1]&&!data.achievements.includes(a[0]))data.achievements.push(a[0])})}
+function renderAchievements(){checkAchievements();document.getElementById("achievements").innerHTML=data.achievements.length?data.achievements.map(x=>'<div class="item">🏆 '+x+"</div>").join(""):"<p>🔒 Zatím žádné achievementy.</p>"}
+function renderHistory(){document.getElementById("history").innerHTML=data.history.length?data.history.slice().reverse().slice(0,10).map(x=>'<div class="item"><span>📅 '+x.date+"</span><b>+"+x.xp+" XP</b></div>").join(""):"<p>Zatím žádná historie.</p>"}
+update();
+</script>
+</body>
+</html>
